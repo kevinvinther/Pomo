@@ -7,14 +7,35 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant};
-use std::{env, thread};
+use std::{env, io, thread};
 
 pub fn start(kind: SessionKind, config: &Config) -> anyhow::Result<()> {
     match kind {
-        SessionKind::Work => work_session(&config.work, "Work time!", Path::new(&config.path)),
-        SessionKind::LongBreak => break_session(&config.long_break, "Long break!"),
-        SessionKind::ShortBreak => break_session(&config.short_break, "Short break!"),
+        SessionKind::Work => {
+            work_session(&config.work, "Work time!", Path::new(&config.path))?;
+            handle_pause(config)?;
+            Ok(())
+        },
+        SessionKind::LongBreak => {
+            break_session(&config.long_break, "Long break!")?;
+            handle_pause(config)?;
+            Ok(())
+        },
+        SessionKind::ShortBreak => {
+            break_session(&config.short_break, "Short break!")?;
+            handle_pause(config)?;
+            Ok(())
+        },
     }
+}
+
+fn handle_pause(config: &Config) -> anyhow::Result<()> {
+    if !config.auto_start_next {
+        println!("Press the enter key to continue...");
+        io::stdin()
+            .read_line(&mut String::new())?;
+    }
+    Ok(())
 }
 
 fn work_session(minutes: &Seconds, message: &str, path: &Path) -> anyhow::Result<()> {
