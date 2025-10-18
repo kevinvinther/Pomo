@@ -1,4 +1,5 @@
 use crate::entities::{Config, Seconds, SessionKind};
+use crate::helpers::send_notification;
 use anyhow::Context;
 use chrono::Local;
 use indicatif::{ProgressBar, ProgressStyle};
@@ -18,6 +19,7 @@ pub fn start(kind: SessionKind, config: &Config) -> anyhow::Result<()> {
 
 fn work_session(minutes: &Seconds, message: &str, path: &Path) -> anyhow::Result<()> {
     run_timer(minutes, message);
+    send_notification("Work done!", "Your timer has completed, time to journal!")?;
     start_journal(path).with_context(|| "Couldn't start journal")?;
 
     Ok(())
@@ -25,6 +27,7 @@ fn work_session(minutes: &Seconds, message: &str, path: &Path) -> anyhow::Result
 
 fn break_session(minutes: &Seconds, message: &str) -> anyhow::Result<()> {
     run_timer(minutes, message);
+    send_notification("Break done!", "It's time to get back to working!")?;
     Ok(())
 }
 

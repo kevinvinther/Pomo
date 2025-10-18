@@ -2,6 +2,7 @@ extern crate core;
 
 mod app;
 mod entities;
+mod helpers;
 
 use crate::entities::{Config, SessionKind};
 use anyhow::Context;
