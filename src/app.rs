@@ -1,4 +1,5 @@
-use crate::entities::{Config, Seconds, SessionKind};
+use crate::entities::config::Config;
+use crate::entities::{Seconds, SessionKind};
 use crate::helpers::send_notification;
 use anyhow::Context;
 use chrono::Local;
@@ -12,7 +13,7 @@ use std::{env, io, thread};
 pub fn start(kind: SessionKind, config: &Config) -> anyhow::Result<()> {
     match kind {
         SessionKind::Work => {
-            work_session(&config.work, "Work time!", Path::new(&config.path))?;
+            work_session(&config.work, "Work time!", Path::new(&config.journal_path))?;
             handle_pause(config)?;
             Ok(())
         }
