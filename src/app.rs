@@ -15,25 +15,24 @@ pub fn start(kind: SessionKind, config: &Config) -> anyhow::Result<()> {
             work_session(&config.work, "Work time!", Path::new(&config.path))?;
             handle_pause(config)?;
             Ok(())
-        },
+        }
         SessionKind::LongBreak => {
             break_session(&config.long_break, "Long break!")?;
             handle_pause(config)?;
             Ok(())
-        },
+        }
         SessionKind::ShortBreak => {
             break_session(&config.short_break, "Short break!")?;
             handle_pause(config)?;
             Ok(())
-        },
+        }
     }
 }
 
 fn handle_pause(config: &Config) -> anyhow::Result<()> {
     if !config.auto_start_next {
         println!("Press the enter key to continue...");
-        io::stdin()
-            .read_line(&mut String::new())?;
+        io::stdin().read_line(&mut String::new())?;
     }
     Ok(())
 }
