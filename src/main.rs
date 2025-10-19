@@ -1,13 +1,14 @@
 extern crate core;
 
 mod app;
+mod config_repository;
 mod entities;
 mod helpers;
 
-use crate::entities::{Config, SessionKind};
+use crate::entities::SessionKind;
+use crate::entities::config::Config;
 use anyhow::Context;
 use clap::*;
-use tokio::fs;
 
 #[derive(Parser)]
 struct Args {
@@ -23,14 +24,8 @@ enum Command {
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    let config_path = "$HOME/.config/pomo";
-
-    let config = Config::default();
-
-    // Create directory and all parents if it doesn't exist.
-    fs::create_dir_all(&config_path)
-        .await
-        .with_context(|| format!("Creating directory {}", config_path))?;
+    let config = config_repository::get_config()?;
+    config.validate()?;
 
     match args.cmd {
         Some(Command::Start) => timer_loop(config),
