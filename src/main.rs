@@ -4,11 +4,18 @@ mod app;
 mod config_repository;
 mod entities;
 mod helpers;
+mod tui;
 
 use crate::entities::SessionKind;
 use crate::entities::config::Config;
 use anyhow::Context;
 use clap::*;
+use crossterm::event;
+use crossterm::event::Event;
+use ratatui::{DefaultTerminal, Frame};
+use ratatui::layout::{Direction, Layout};
+use ratatui::prelude::Constraint;
+use ratatui::widgets::{Block, Borders, Paragraph};
 
 #[derive(Parser)]
 struct Args {
@@ -26,6 +33,8 @@ async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let config = config_repository::get_config()?;
     config.validate()?;
+    
+    tui::main()?;
 
     match args.cmd {
         Some(Command::Start) => timer_loop(config),
