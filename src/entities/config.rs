@@ -26,7 +26,8 @@ impl Default for Config {
 
 impl Config {
     pub fn from_toml_str(s: &str) -> anyhow::Result<Self> {
-        let cfg: Config = toml::from_str(s)?;
+        let mut cfg: Config = toml::from_str(s)?;
+        cfg.journal_path = shellexpand::full(&cfg.journal_path)?.into_owned();
         Ok(cfg)
     }
 
