@@ -9,6 +9,7 @@ use crate::entities::SessionKind;
 use crate::entities::config::Config;
 use anyhow::Context;
 use clap::*;
+use helpers::DesktopNotifier;
 
 #[derive(Parser)]
 struct Args {
@@ -24,8 +25,10 @@ enum Command {
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    let config = config_repository::get_config()?;
+    let config = config_repository::read_config()?;
     config.validate()?;
+
+    let notifier = DesktopNotifier;
 
     match args.cmd {
         Some(Command::Start) => timer_loop(config),

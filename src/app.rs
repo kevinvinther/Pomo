@@ -1,6 +1,6 @@
 use crate::entities::config::Config;
 use crate::entities::{Seconds, SessionKind};
-use crate::helpers::send_notification;
+use crate::helpers::{Notifier, send_notification};
 use anyhow::Context;
 use chrono::Local;
 use indicatif::{ProgressBar, ProgressStyle};
@@ -10,20 +10,25 @@ use std::process::Command;
 use std::time::{Duration, Instant};
 use std::{env, io, thread};
 
-pub fn start(kind: SessionKind, config: &Config) -> anyhow::Result<()> {
+pub fn start(kind: SessionKind, config: &Config, notifier: &dyn Notifier) -> anyhow::Result<()> {
     match kind {
         SessionKind::Work => {
-            work_session(&config.work, "Work time!", Path::new(&config.journal_path))?;
+            work_session(
+                &config.work,
+                "Work time!",
+                Path::new(&config.journal_path),
+                notifier,
+            )?;
             handle_pause(config)?;
             Ok(())
         }
         SessionKind::LongBreak => {
-            break_session(&config.long_break, "Long break!")?;
+            break_session(&config.long_break, "Long break!", notifier)?;
             handle_pause(config)?;
             Ok(())
         }
         SessionKind::ShortBreak => {
-            break_session(&config.short_break, "Short break!")?;
+            break_session(&config.short_break, "Short break!", notifier)?;
             handle_pause(config)?;
             Ok(())
         }
@@ -38,17 +43,22 @@ fn handle_pause(config: &Config) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn work_session(minutes: &Seconds, message: &str, path: &Path) -> anyhow::Result<()> {
+fn work_session(
+    minutes: &Seconds,
+    message: &str,
+    path: &Path,
+    notifier: &dyn Notifier,
+) -> anyhow::Result<()> {
     run_timer(minutes, message);
-    send_notification("Work done!", "Your timer has completed, time to journal!")?;
+    notifier.send_notification("Work done!", "Your timer has completed, time to journal!")?;
     start_journal(path).with_context(|| "Couldn't start journal")?;
 
     Ok(())
 }
 
-fn break_session(minutes: &Seconds, message: &str) -> anyhow::Result<()> {
+fn break_session(minutes: &Seconds, message: &str, notifier: &dyn Notifier) -> anyhow::Result<()> {
     run_timer(minutes, message);
-    send_notification("Break done!", "It's time to get back to working!")?;
+    notifier.send_notification("Break done!", "It's time to get back to working!")?;
     Ok(())
 }
 

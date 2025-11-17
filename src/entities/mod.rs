@@ -6,8 +6,16 @@ use serde::{Deserialize, Serialize};
 pub struct Seconds(pub u64);
 
 impl Seconds {
-    pub fn from_minutes(minutes: u64) -> Self {
-        Self(minutes * 60)
+    pub fn from_minutes<T>(minutes: T) -> Self
+    where
+        T: TryInto<u64>,
+        T::Error: std::fmt::Debug,
+    {
+        Self(minutes.try_into().unwrap() * 60)
+    }
+
+    pub fn to_minutes(minutes: Self) -> u64 {
+        minutes.0 / 60
     }
 }
 
