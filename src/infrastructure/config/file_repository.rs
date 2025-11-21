@@ -1,5 +1,4 @@
-use crate::entities::Seconds;
-use crate::entities::config::Config;
+use crate::domain::config::Config;
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use std::env::home_dir;
@@ -7,6 +6,7 @@ use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use crate::domain::time::Seconds;
 
 pub fn default_config() -> Config {
     // TODO: Journal path should depend on OS.
@@ -53,7 +53,7 @@ fn create_config() -> anyhow::Result<()> {
             .parent()
             .expect("Could not get config directory"),
     )
-    .with_context(|| format!("Creating directory {}", &config_path.to_string_lossy()))?;
+        .with_context(|| format!("Creating directory {}", &config_path.to_string_lossy()))?;
 
     let mut file = File::create(config_path)?;
 
@@ -118,9 +118,9 @@ impl TryFrom<&Config> for FileConfig {
 
     fn try_from(config: &Config) -> Result<Self, Self::Error> {
         Ok(FileConfig {
-            work_minutes: Seconds::to_minutes(config.work),
-            short_break_minutes: Seconds::to_minutes(config.short_break),
-            long_break_minutes: Seconds::to_minutes(config.long_break),
+            work_minutes: Seconds::from(config.work).to_minutes(),
+            short_break_minutes: Seconds::from(config.short_break).to_minutes(),
+            long_break_minutes: Seconds::from(config.long_break).to_minutes(),
             long_break_interval: config.long_break_interval,
             auto_start_next: config.auto_start_next,
             journal_path: config.journal_path.to_string_lossy().to_string(),

@@ -1,5 +1,3 @@
-pub mod config;
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Copy, Deserialize, Serialize)]
@@ -14,14 +12,7 @@ impl Seconds {
         Self(minutes.try_into().unwrap() * 60)
     }
 
-    pub fn to_minutes(minutes: Self) -> u64 {
-        minutes.0 / 60
+    pub fn to_minutes(self) -> u64 {
+        self.0 / 60
     }
-}
-
-#[derive(Eq, PartialEq, Clone, Copy, Debug)]
-pub enum SessionKind {
-    Work,
-    ShortBreak,
-    LongBreak,
 }

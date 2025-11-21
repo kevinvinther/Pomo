@@ -1,4 +1,4 @@
-use crate::entities::Seconds;
+use crate::domain::time::Seconds;
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]

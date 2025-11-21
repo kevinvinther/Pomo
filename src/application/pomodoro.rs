@@ -1,16 +1,15 @@
-use crate::entities::config::Config;
-use crate::entities::{Seconds, SessionKind};
-use crate::helpers::{Notifier, send_notification};
-use anyhow::Context;
-use chrono::Local;
+use crate::domain::config::Config;
+use crate::domain::session_kind::SessionKind;
+use crate::domain::time::Seconds;
+use crate::infrastructure::journaling::Journal;
+use crate::infrastructure::notifications::Notifier;
 use indicatif::{ProgressBar, ProgressStyle};
-use std::io::Write;
-use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::path::Path;
 use std::time::{Duration, Instant};
-use std::{env, io, thread};
+use std::{io, thread};
+use anyhow::Context;
 
-pub fn start(kind: SessionKind, config: &Config, notifier: &dyn Notifier) -> anyhow::Result<()> {
+pub fn start(kind: SessionKind, config: &Config, notifier: &dyn Notifier, journal: &dyn Journal) -> anyhow::Result<()> {
     match kind {
         SessionKind::Work => {
             work_session(
@@ -18,6 +17,7 @@ pub fn start(kind: SessionKind, config: &Config, notifier: &dyn Notifier) -> any
                 "Work time!",
                 Path::new(&config.journal_path),
                 notifier,
+                journal,
             )?;
             handle_pause(config)?;
             Ok(())
@@ -48,17 +48,20 @@ fn work_session(
     message: &str,
     path: &Path,
     notifier: &dyn Notifier,
+    journal: &dyn Journal,
 ) -> anyhow::Result<()> {
     run_timer(minutes, message);
-    notifier.send_notification("Work done!", "Your timer has completed, time to journal!")?;
-    start_journal(path).with_context(|| "Couldn't start journal")?;
+    notify_work_done(notifier)
+        .context("Sending work done notification")?;
+    journal.create_journal(path.to_path_buf())
+        .context("Creating journal")?;
 
     Ok(())
 }
 
 fn break_session(minutes: &Seconds, message: &str, notifier: &dyn Notifier) -> anyhow::Result<()> {
     run_timer(minutes, message);
-    notifier.send_notification("Break done!", "It's time to get back to working!")?;
+    notify_break_done(notifier)?;
     Ok(())
 }
 
@@ -107,54 +110,14 @@ fn setup_progressbar(message: &str, seconds_value: u64) -> ProgressBar {
     pb
 }
 
-fn start_journal(path: &Path) -> anyhow::Result<()> {
-    let editor = env::var_os("VISUAL")
-        .or_else(|| env::var_os("EDITOR"))
-        .with_context(|| "Neither $VISUAL nor $EDITOR was set.")?;
 
-    let now = Local::now();
-    let header = now.format("%Y-%m-%d %H:%M:%S").to_string();
 
-    let mut temp = tempfile::Builder::new()
-        .prefix("pomo-session")
-        .suffix(".md")
-        .tempfile()
-        .context("Failed to create temporary journal file.")?;
-
-    writeln!(temp, "# {}", header).context("Writing header to temp file")?;
-
-    temp.flush().context("Flushing temp file")?;
-
-    let temp_path = temp.path().to_path_buf();
-
-    Command::new(&editor)
-        .arg(&temp_path)
-        .status()
-        .with_context(|| "Trying to edit file")?;
-
-    move_journal(path, &temp_path, now).with_context(|| "Moving journal location")?;
-
-    temp.close().ok();
-
+fn notify_work_done(notifier: &dyn Notifier) -> anyhow::Result<()> {
+    notifier.send_notification("Work done!", "Your timer has completed, time to journal!")?;
     Ok(())
 }
 
-fn move_journal(dir: &Path, src: &Path, now: chrono::DateTime<Local>) -> anyhow::Result<PathBuf> {
-    std::fs::create_dir_all(dir)
-        .with_context(|| format!("Creating destination directory: {}", dir.display()))?;
-
-    let filename = format!("{}.md", now.format("%Y-%m-%d_%H-%M-%S"));
-    let dest = dir.join(filename);
-
-    std::fs::copy(src, &dest).with_context(|| {
-        format!(
-            "Moving file from {} to desired path: {}",
-            src.display(),
-            &dest.display()
-        )
-    })?;
-
-    std::fs::remove_file(src).with_context(|| format!("Removing file {}", src.display()))?;
-
-    Ok(dest)
+fn notify_break_done(notifier: &dyn Notifier) -> anyhow::Result<()> {
+    notifier.send_notification("Break done!", "It's time to get back to working!")?;
+    Ok(())
 }
