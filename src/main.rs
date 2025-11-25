@@ -1,17 +1,17 @@
 extern crate core;
 
+mod application;
 mod domain;
 mod infrastructure;
-mod application;
 
-use crate::domain::session_kind::SessionKind;
+use crate::application::pomodoro;
 use crate::domain::config::Config;
+use crate::domain::session_kind::SessionKind;
+use crate::infrastructure::config::file_repository;
+use crate::infrastructure::journaling::{Journal, MarkdownJournal};
+use crate::infrastructure::notifications::{DesktopNotifier, Notifier};
 use anyhow::Context;
 use clap::*;
-use crate::infrastructure::config::file_repository;
-use crate::infrastructure::notifications::{DesktopNotifier, Notifier};
-use crate::application::pomodoro;
-use crate::infrastructure::journaling::{Journal, MarkdownJournal};
 
 #[derive(Parser)]
 struct Args {
@@ -42,7 +42,11 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn timer_loop(config: Config, notifier: &dyn Notifier, journal: &dyn Journal) -> anyhow::Result<()> {
+fn timer_loop(
+    config: Config,
+    notifier: &dyn Notifier,
+    journal: &dyn Journal,
+) -> anyhow::Result<()> {
     let total_cycles = config.long_break_interval;
 
     for session_num in 1..=total_cycles {

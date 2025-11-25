@@ -1,9 +1,9 @@
 use anyhow::Context;
 use chrono::Local;
+use std::env;
 use std::io::Write;
 use std::path::PathBuf;
 use std::process::Command;
-use std::env;
 
 pub trait Journal {
     fn create_journal(&self, journal_dir: PathBuf) -> anyhow::Result<PathBuf>;
@@ -12,7 +12,12 @@ pub trait Journal {
 pub struct MarkdownJournal;
 
 impl MarkdownJournal {
-    fn move_journal(&self, dir: &PathBuf, src: &PathBuf, now: chrono::DateTime<Local>) -> anyhow::Result<PathBuf> {
+    fn move_journal(
+        &self,
+        dir: &PathBuf,
+        src: &PathBuf,
+        now: chrono::DateTime<Local>,
+    ) -> anyhow::Result<PathBuf> {
         std::fs::create_dir_all(dir)
             .with_context(|| format!("Creating destination directory: {}", dir.display()))?;
 
@@ -31,7 +36,7 @@ impl MarkdownJournal {
 
         Ok(dest)
     }
-    
+
     fn start_journal(&self, path: &PathBuf) -> anyhow::Result<PathBuf> {
         let editor = env::var_os("VISUAL")
             .or_else(|| env::var_os("EDITOR"))
@@ -57,8 +62,8 @@ impl MarkdownJournal {
             .status()
             .with_context(|| "Trying to edit file")?;
 
-        
-        self.move_journal(&path, &temp_path, now).with_context(|| "Moving journal location")?;
+        self.move_journal(&path, &temp_path, now)
+            .with_context(|| "Moving journal location")?;
 
         // We disregard the error, as it will always error if the file has been moved.
         // However, if it for some reason has not been moved, and an error was not raised, we want
@@ -72,8 +77,7 @@ impl MarkdownJournal {
 impl Journal for MarkdownJournal {
     fn create_journal(&self, journal_dir: PathBuf) -> anyhow::Result<PathBuf> {
         self.start_journal(&journal_dir)?;
-        
+
         Ok(journal_dir)
     }
-    
 }

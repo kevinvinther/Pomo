@@ -3,13 +3,18 @@ use crate::domain::session_kind::SessionKind;
 use crate::domain::time::Seconds;
 use crate::infrastructure::journaling::Journal;
 use crate::infrastructure::notifications::Notifier;
+use anyhow::Context;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::path::Path;
 use std::time::{Duration, Instant};
 use std::{io, thread};
-use anyhow::Context;
 
-pub fn start(kind: SessionKind, config: &Config, notifier: &dyn Notifier, journal: &dyn Journal) -> anyhow::Result<()> {
+pub fn start(
+    kind: SessionKind,
+    config: &Config,
+    notifier: &dyn Notifier,
+    journal: &dyn Journal,
+) -> anyhow::Result<()> {
     match kind {
         SessionKind::Work => {
             work_session(
@@ -51,9 +56,9 @@ fn work_session(
     journal: &dyn Journal,
 ) -> anyhow::Result<()> {
     run_timer(minutes, message);
-    notify_work_done(notifier)
-        .context("Sending work done notification")?;
-    journal.create_journal(path.to_path_buf())
+    notify_work_done(notifier).context("Sending work done notification")?;
+    journal
+        .create_journal(path.to_path_buf())
         .context("Creating journal")?;
 
     Ok(())
@@ -109,8 +114,6 @@ fn setup_progressbar(message: &str, seconds_value: u64) -> ProgressBar {
 
     pb
 }
-
-
 
 fn notify_work_done(notifier: &dyn Notifier) -> anyhow::Result<()> {
     notifier.send_notification("Work done!", "Your timer has completed, time to journal!")?;

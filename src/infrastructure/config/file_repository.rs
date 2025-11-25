@@ -1,4 +1,5 @@
 use crate::domain::config::Config;
+use crate::domain::time::Seconds;
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use std::env::home_dir;
@@ -6,7 +7,6 @@ use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use crate::domain::time::Seconds;
 
 pub fn default_config() -> Config {
     // TODO: Journal path should depend on OS.
@@ -53,7 +53,7 @@ fn create_config() -> anyhow::Result<()> {
             .parent()
             .expect("Could not get config directory"),
     )
-        .with_context(|| format!("Creating directory {}", &config_path.to_string_lossy()))?;
+    .with_context(|| format!("Creating directory {}", &config_path.to_string_lossy()))?;
 
     let mut file = File::create(config_path)?;
 
