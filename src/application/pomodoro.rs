@@ -1,8 +1,8 @@
+use crate::application::ports::journaling::Journal;
+use crate::application::ports::notifier::Notifier;
 use crate::domain::config::Config;
 use crate::domain::session_kind::SessionKind;
 use crate::domain::time::Seconds;
-use crate::infrastructure::journaling::Journal;
-use crate::infrastructure::notifications::Notifier;
 use anyhow::Context;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::path::Path;
@@ -58,7 +58,7 @@ fn work_session(
     run_timer(minutes, message);
     notify_work_done(notifier).context("Sending work done notification")?;
     journal
-        .create_journal(path.to_path_buf())
+        .create_journal(&path.to_path_buf())
         .context("Creating journal")?;
 
     Ok(())
@@ -71,7 +71,7 @@ fn break_session(minutes: &Seconds, message: &str, notifier: &dyn Notifier) -> a
 }
 
 fn run_timer(seconds: &Seconds, message: &str) {
-    let total_secs = seconds.0;
+    let total_secs = seconds.as_seconds();
     let pb = setup_progressbar(message, total_secs);
 
     let start = Instant::now();

@@ -4,15 +4,19 @@ use serde::{Deserialize, Serialize};
 pub struct Seconds(pub u64);
 
 impl Seconds {
-    pub fn from_minutes<T>(minutes: T) -> Self
-    where
-        T: TryInto<u64>,
-        T::Error: std::fmt::Debug,
-    {
-        Self(minutes.try_into().unwrap() * 60)
+    pub fn from_seconds(secs: u64) -> Self {
+        Self(secs)
     }
 
-    pub fn to_minutes(self) -> u64 {
+    pub fn from_minutes(minutes: u64) -> Self {
+        Self(minutes * 60)
+    }
+
+    pub fn as_seconds(&self) -> u64 {
+        self.0
+    }
+
+    pub fn as_minutes(self) -> u64 {
         self.0 / 60
     }
 }

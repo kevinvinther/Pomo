@@ -5,11 +5,13 @@ mod domain;
 mod infrastructure;
 
 use crate::application::pomodoro;
+use crate::application::ports::journaling::Journal;
+use crate::application::ports::notifier::Notifier;
 use crate::domain::config::Config;
 use crate::domain::session_kind::SessionKind;
 use crate::infrastructure::config::file_repository;
-use crate::infrastructure::journaling::{Journal, MarkdownJournal};
-use crate::infrastructure::notifications::{DesktopNotifier, Notifier};
+use crate::infrastructure::journaling::MarkdownJournal;
+use crate::infrastructure::notifications::DesktopNotifier;
 use anyhow::Context;
 use clap::*;
 
@@ -28,7 +30,6 @@ enum Command {
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let config = file_repository::read_config()?;
-    config.validate()?;
 
     let notifier = DesktopNotifier;
     let journal = MarkdownJournal;

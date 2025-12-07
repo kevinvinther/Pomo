@@ -1,9 +1,6 @@
+pub(crate) use crate::application::ports::notifier::Notifier;
 use anyhow::Context;
 use notify_rust::Notification;
-
-pub trait Notifier {
-    fn send_notification(&self, title: &str, content: &str) -> anyhow::Result<()>;
-}
 
 pub struct DesktopNotifier;
 

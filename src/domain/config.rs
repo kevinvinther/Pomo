@@ -17,13 +17,16 @@ impl Config {
             self.long_break_interval > 0,
             "Long break interval must be greater than 0!"
         );
-        anyhow::ensure!(self.work.0 > 0, "Work time must be greater than 0!");
         anyhow::ensure!(
-            self.long_break.0 > 0,
+            self.work.as_seconds() > 0,
+            "Work time must be greater than 0!"
+        );
+        anyhow::ensure!(
+            self.long_break.as_seconds() > 0,
             "Long break time must be greater than 0!"
         );
         anyhow::ensure!(
-            self.short_break.0 > 0,
+            self.short_break.as_seconds() > 0,
             "Short break time must be greater than 0!"
         );
         Ok(())

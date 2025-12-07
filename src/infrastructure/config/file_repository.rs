@@ -118,9 +118,9 @@ impl TryFrom<&Config> for FileConfig {
 
     fn try_from(config: &Config) -> Result<Self, Self::Error> {
         Ok(FileConfig {
-            work_minutes: Seconds::from(config.work).to_minutes(),
-            short_break_minutes: Seconds::from(config.short_break).to_minutes(),
-            long_break_minutes: Seconds::from(config.long_break).to_minutes(),
+            work_minutes: Seconds::from(config.work).as_minutes(),
+            short_break_minutes: Seconds::from(config.short_break).as_minutes(),
+            long_break_minutes: Seconds::from(config.long_break).as_minutes(),
             long_break_interval: config.long_break_interval,
             auto_start_next: config.auto_start_next,
             journal_path: config.journal_path.to_string_lossy().to_string(),

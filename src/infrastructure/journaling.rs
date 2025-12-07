@@ -1,3 +1,4 @@
+use crate::application::ports::journaling::Journal;
 use anyhow::Context;
 use chrono::Local;
 use std::env;
@@ -5,34 +6,30 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::process::Command;
 
-pub trait Journal {
-    fn create_journal(&self, journal_dir: PathBuf) -> anyhow::Result<PathBuf>;
-}
-
 pub struct MarkdownJournal;
 
 impl MarkdownJournal {
     fn move_journal(
         &self,
-        dir: &PathBuf,
-        src: &PathBuf,
+        from: &PathBuf,
+        to: &PathBuf,
         now: chrono::DateTime<Local>,
     ) -> anyhow::Result<PathBuf> {
-        std::fs::create_dir_all(dir)
-            .with_context(|| format!("Creating destination directory: {}", dir.display()))?;
+        std::fs::create_dir_all(to)
+            .with_context(|| format!("Creating destination directory: {}", to.display()))?;
 
         let filename = format!("{}.md", now.format("%Y-%m-%d_%H-%M-%S"));
-        let dest = dir.join(filename);
+        let dest = to.join(filename);
 
-        std::fs::copy(src, &dest).with_context(|| {
+        std::fs::copy(from, &dest).with_context(|| {
             format!(
                 "Moving file from {} to desired path: {}",
-                src.display(),
+                from.display(),
                 &dest.display()
             )
         })?;
 
-        std::fs::remove_file(src).with_context(|| format!("Removing file {}", src.display()))?;
+        std::fs::remove_file(from).with_context(|| format!("Removing file {}", from.display()))?;
 
         Ok(dest)
     }
@@ -62,7 +59,8 @@ impl MarkdownJournal {
             .status()
             .with_context(|| "Trying to edit file")?;
 
-        self.move_journal(&path, &temp_path, now)
+        let journal_path = self
+            .move_journal(&temp_path, &path, now)
             .with_context(|| "Moving journal location")?;
 
         // We disregard the error, as it will always error if the file has been moved.
@@ -70,14 +68,12 @@ impl MarkdownJournal {
         // to close the file.
         temp.close().ok();
 
-        Ok(path.clone())
+        Ok(journal_path)
     }
 }
 
 impl Journal for MarkdownJournal {
-    fn create_journal(&self, journal_dir: PathBuf) -> anyhow::Result<PathBuf> {
-        self.start_journal(&journal_dir)?;
-
-        Ok(journal_dir)
+    fn create_journal(&self, journal_dir: &PathBuf) -> anyhow::Result<PathBuf> {
+        Ok(self.start_journal(&journal_dir)?)
     }
 }
