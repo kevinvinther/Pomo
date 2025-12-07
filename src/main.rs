@@ -1,12 +1,17 @@
 extern crate core;
 
-mod app;
-mod config_repository;
-mod entities;
-mod helpers;
+mod application;
+mod domain;
+mod infrastructure;
 
-use crate::entities::SessionKind;
-use crate::entities::config::Config;
+use crate::application::pomodoro;
+use crate::application::ports::journaling::Journal;
+use crate::application::ports::notifier::Notifier;
+use crate::domain::config::Config;
+use crate::domain::session_kind::SessionKind;
+use crate::infrastructure::config::file_repository;
+use crate::infrastructure::journaling::MarkdownJournal;
+use crate::infrastructure::notifications::DesktopNotifier;
 use anyhow::Context;
 use clap::*;
 
@@ -24,11 +29,13 @@ enum Command {
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    let config = config_repository::get_config()?;
-    config.validate()?;
+    let config = file_repository::read_config()?;
+
+    let notifier = DesktopNotifier;
+    let journal = MarkdownJournal;
 
     match args.cmd {
-        Some(Command::Start) => timer_loop(config),
+        Some(Command::Start) => timer_loop(config, &notifier, &journal),
         _ => Ok(()),
     }
     .with_context(|| "Matching commands")?;
@@ -36,18 +43,22 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn timer_loop(config: Config) -> anyhow::Result<()> {
+fn timer_loop(
+    config: Config,
+    notifier: &dyn Notifier,
+    journal: &dyn Journal,
+) -> anyhow::Result<()> {
     let total_cycles = config.long_break_interval;
 
     for session_num in 1..=total_cycles {
-        app::start(SessionKind::Work, &config)
+        pomodoro::start(SessionKind::Work, &config, notifier, journal)
             .with_context(|| format!("Starting work session #{session_num}"))?;
 
         if session_num < total_cycles {
-            app::start(SessionKind::ShortBreak, &config)
+            pomodoro::start(SessionKind::ShortBreak, &config, notifier, journal)
                 .with_context(|| format!("Starting short break after session #{session_num}"))?;
         } else {
-            app::start(SessionKind::LongBreak, &config)
+            pomodoro::start(SessionKind::LongBreak, &config, notifier, journal)
                 .with_context(|| format!("Starting long break after session #{session_num}"))?;
         }
     }
